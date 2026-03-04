@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+	<RunConfiguration>
+		<DisableAppDomain>true</DisableAppDomain>
+		<MaxCpuCount>1</MaxCpuCount>
+		<TargetFrameworkVersion>net8.0</TargetFrameworkVersion>
+		<ResultsDirectory>TestResults</ResultsDirectory>
+	</RunConfiguration>
+	<RunConfiguration>
+		<ResultsDirectory>TestResults</ResultsDirectory>
+
+		<EnvironmentVariables>
+			<!-- SHAREPOINT integration settings -->
+			<SHAREPOINT__ROOTURL>https://your-SHAREPOINT-instance.example.com</SHAREPOINT__ROOTURL>
+			<SHAREPOINT__APPID>your-app-id</SHAREPOINT__APPID>
+			<SHAREPOINT__USERNAME>testuser</SHAREPOINT__USERNAME>
+			<SHAREPOINT__PASSWORD>testpassword</SHAREPOINT__PASSWORD>
+
+			<!-- SharePoint / Azure AD integration settings -->
+			<SP__TENANTID>dcba2503-3599-4f69-8e96-1feda2bad26d</SP__TENANTID>
+			<SP__CLIENTID>c0428fbf-041e-459e-b507-c2c3406c5bde</SP__CLIENTID>
+			<SP__CLIENTSECRET>7_N8Q~2WBmlitLYkHkS_k3CN.PzeKd_cvR2VRbFY</SP__CLIENTSECRET>
+			<SP__SCOPE>https://graph.microsoft.com/.default</SP__SCOPE>
+
+			<!-- Optional: site and list IDs for your tests -->
+			<ClientDocumentSiteId>07a63794-bf15-4fae-bfe1-c5efdabbaef0</ClientDocumentSiteId>
+			<ClientDocumentsClientList>ee00f2a8-ee06-4a16-89fa-4aa7bf8a21f7,01d40308-0243-4367-84f1-636c03ffc4cf</ClientDocumentsClientList>
+			<ClientDocumentConfigList>ClientOverviewListConfigs</ClientDocumentConfigList>
+		</EnvironmentVariables>
+	</RunConfiguration>
+</RunSettings>
