@@ -1,0 +1,159 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+- group: sharePointUtilsConfig
+
+- name: runTests           
+  value: 'false'           
+
+- name: repoRoot
+  value: '.'
+- name: solution
+  value: 'AFH.Common.SharePointUtils.sln'
+- name: sdkProject
+  value: 'src/AFH.Common.SharePointUtils/AFH.Common.SharePointUtils.csproj'
+- name: testProjects
+  value: 'tests/**/*.csproj'
+- name: buildConfiguration
+  value: 'Release'
+- name: dotnetVersion
+  value: '8.0.x'
+
+stages:
+# ============================================================
+# BUILD & TEST
+# ============================================================
+- stage: BuildAndTest
+  displayName: 'Build & Test'
+  jobs:
+  - job: Build
+    displayName: 'Restore & Build'
+    steps:
+    - checkout: self
+      fetchDepth: 0
+
+    - task: UseDotNet@2
+      displayName: 'Install .NET SDK'
+      inputs:
+        packageType: sdk
+        version: '$(dotnetVersion)'
+
+    - task: NuGetToolInstaller@1
+
+    - task: NuGetAuthenticate@1
+      displayName: 'Authenticate to Azure Artifacts'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore (solution)'
+      inputs:
+        command: restore
+        projects: '$(solution)'
+        feedsToUse: 'select'
+        vstsFeed: '$(artifactFeed)'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build (solution)'
+      inputs:
+        command: build
+        projects: '$(solution)'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+
+  # ---------------------------
+  # TEST JOB (OPTIONAL)
+  # ---------------------------
+  - job: Test
+    displayName: 'Run tests'
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables['runTests'], 'true'))
+    steps:
+    - checkout: self
+      fetchDepth: 0
+
+    - task: UseDotNet@2
+      displayName: 'Install .NET SDK'
+      inputs:
+        packageType: sdk
+        version: '$(dotnetVersion)'
+
+    - task: NuGetAuthenticate@1
+      displayName: 'Authenticate to Azure Artifacts'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Test'
+      inputs:
+        command: test
+        projects: '$(testProjects)'
+        arguments: '--configuration $(buildConfiguration) --logger trx'
+      env:
+        ClientDocuments__SiteId: $(ClientDocuments.SiteId)
+        ClientDocuments__ListId: $(ClientDocuments.ListId)
+        ClientDocuments__ConfigListId: $(ClientDocuments.ConfigListId)
+
+        AzureAD__TenantId: $(AzureAD.TenantId)
+        AzureAD__ClientId: $(AzureAD.ClientId)
+        AzureAD__ClientSecret: $(AzureAD.ClientSecret)
+        AzureAD__AuthorityHost: $(AzureAD.AuthorityHost)
+        AzureAD__Scopes__0: $(AzureAD.Scopes0)
+
+# ============================================================
+# PACK & PUBLISH
+# ============================================================
+- stage: PackAndPublish
+  displayName: 'Pack & Publish SDK'
+  dependsOn: BuildAndTest
+  condition: succeeded()
+  jobs:
+  - job: Pack
+    displayName: 'Pack & Push NuGet'
+    steps:
+    - checkout: self
+      fetchDepth: 0
+
+    - task: UseDotNet@2
+      displayName: 'Install .NET SDK'
+      inputs:
+        packageType: sdk
+        version: '$(dotnetVersion)'
+
+    - task: NuGetToolInstaller@1
+
+    - task: NuGetAuthenticate@1
+      displayName: 'Authenticate to Azure Artifacts'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore (SDK project)'
+      inputs:
+        command: restore
+        projects: '$(sdkProject)'
+        feedsToUse: 'select'
+        vstsFeed: '$(artifactFeed)'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build (SDK project)'
+      inputs:
+        command: build
+        projects: '$(sdkProject)'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Pack (no-build)'
+      inputs:
+        command: pack
+        packagesToPack: '$(sdkProject)'
+        configuration: '$(buildConfiguration)'
+        includesymbols: true
+        outputDir: '$(Build.ArtifactStagingDirectory)'
+        nobuild: true
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Push (Azure Artifacts)'
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+      inputs:
+        command: push
+        packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg;!$(Build.ArtifactStagingDirectory)/*.snupkg'
+        nuGetFeedType: 'internal'
+        publishVstsFeed: '$(artifactFeed)'
