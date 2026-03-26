@@ -1,4 +1,5 @@
-﻿using AFH.Common.SharePointUtils.Models;
+﻿using AFH.Common.SharePointUtils.Extensions;
+using AFH.Common.SharePointUtils.Models;
 using Microsoft.Graph.Models;
 
 namespace AFH.Common.SharePointUtils.Mapping;
@@ -7,27 +8,23 @@ public static class SharePointMapper
 {
     public static SharePointListItemModel ToModel(ListItem item)
     {
-        var fields = item.Fields?.AdditionalData is null
-            ? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-            : new Dictionary<string, object?>(item.Fields.AdditionalData.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value), StringComparer.OrdinalIgnoreCase);
-
         return new SharePointListItemModel
         {
             Id = item.Id,
             CreatedDateTime = item.CreatedDateTime,
             LastModifiedDateTime = item.LastModifiedDateTime,
-            Fields = fields
+            Fields = new Dictionary<string, object?>(item.GetFieldValues(), StringComparer.OrdinalIgnoreCase)
         };
     }
 
     public static SharePointListItemDto ToDto(ListItem item)
     {
-        var fields = item.Fields?.AdditionalData;
+        var fields = item.GetFieldValues();
 
         return new SharePointListItemDto
         {
             Id = item.Id,
-            Title = fields != null && fields.TryGetValue("Title", out var t) ? t?.ToString() : null,
+            Title = fields.GetString("Title"),
             Created = item.CreatedDateTime,
             Modified = item.LastModifiedDateTime
         };

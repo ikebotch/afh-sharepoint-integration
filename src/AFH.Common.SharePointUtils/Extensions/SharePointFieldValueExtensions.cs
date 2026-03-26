@@ -1,10 +1,22 @@
 using AFH.Common.SharePointUtils.Models;
+using Microsoft.Graph.Models;
 using Microsoft.Kiota.Abstractions.Serialization;
 
 namespace AFH.Common.SharePointUtils.Extensions;
 
 public static class SharePointFieldValueExtensions
 {
+    public static IReadOnlyDictionary<string, object?> ToFieldDictionary(this FieldValueSet? fields)
+        => fields?.AdditionalData?.ToDictionary(
+            kvp => kvp.Key,
+            kvp => (object?)kvp.Value,
+            StringComparer.OrdinalIgnoreCase)
+        ?? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+
+    public static IReadOnlyDictionary<string, object?> GetFieldValues(this ListItem? item)
+        => item?.Fields.ToFieldDictionary()
+        ?? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+
     public static string? GetString(this IReadOnlyDictionary<string, object?> fields, string internalName)
         => fields.TryGetValue(internalName, out var value) ? value?.ToString() : null;
 
