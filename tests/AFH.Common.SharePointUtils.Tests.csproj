@@ -29,12 +29,7 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\AFH.Common.SharePointUtils\AFH.Common.SharePointUtils.csproj" />
-		
-
-		<None Update=".env">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
+		<ProjectReference Include="..\src\AFH.Common.SharePointUtils.csproj" />
 		<None Update="local.settings.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>

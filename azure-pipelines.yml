@@ -15,7 +15,7 @@ variables:
 - name: solution
   value: 'AFH.Common.SharePointUtils.sln'
 - name: sdkProject
-  value: 'src/AFH.Common.SharePointUtils/AFH.Common.SharePointUtils.csproj'
+  value: 'src/AFH.Common.SharePointUtils.csproj'
 - name: testProjects
   value: 'tests/**/*.csproj'
 - name: buildConfiguration
