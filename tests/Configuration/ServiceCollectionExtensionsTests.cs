@@ -9,6 +9,48 @@ namespace AFH.Common.SharePointUtils.Tests.Configuration;
 public class ServiceCollectionExtensionsTests
 {
     [Fact]
+    public void ResolveAuthOptions_Prefers_Dedicated_SharePointGraph_Configuration()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AzureAD:TenantId"] = "api-tenant-id",
+                ["AzureAD:ClientId"] = "api-client-id",
+                ["AzureAD:ClientSecret"] = "api-client-secret",
+                ["SharePointGraph:TenantId"] = "graph-tenant-id",
+                ["SharePointGraph:ClientId"] = "graph-client-id",
+                ["SharePointGraph:ClientSecret"] = "graph-client-secret"
+            })
+            .Build();
+
+        var options = ServiceCollectionExtensions.ResolveAuthOptions(configuration);
+
+        Assert.Equal("graph-tenant-id", options.TenantId);
+        Assert.Equal("graph-client-id", options.ClientId);
+        Assert.Equal("graph-client-secret", options.ClientSecret);
+    }
+
+    [Fact]
+    public void ResolveAuthOptions_Does_Not_Fall_Back_When_SharePointGraph_Is_Incomplete()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AzureAD:TenantId"] = "api-tenant-id",
+                ["AzureAD:ClientId"] = "api-client-id",
+                ["AzureAD:ClientSecret"] = "api-client-secret",
+                ["SharePointGraph:TenantId"] = "graph-tenant-id",
+                ["SharePointGraph:ClientId"] = "graph-client-id"
+            })
+            .Build();
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => ServiceCollectionExtensions.ResolveAuthOptions(configuration));
+
+        Assert.Contains("SharePointGraph:ClientSecret", exception.Message);
+    }
+
+    [Fact]
     public void AddSharePoint_Registers_GenericClients_And_CompatibilityServices()
     {
         var configuration = new ConfigurationBuilder()

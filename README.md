@@ -14,6 +14,16 @@ It provides generic SharePoint capabilities for site/list discovery, list CRUD a
 - `dotnet build src/AFH.Common.SharePointUtils.csproj --no-restore`
 - `dotnet test tests/AFH.Common.SharePointUtils.Tests.csproj --no-restore`
 
+## Authentication Configuration
+
+Configure Microsoft Graph application credentials under `SharePointGraph`:
+
+- `SharePointGraph:TenantId`
+- `SharePointGraph:ClientId`
+- `SharePointGraph:ClientSecret`
+
+`AzureAD` remains a backward-compatible fallback when `SharePointGraph` is not present. When both sections exist, the dedicated `SharePointGraph` configuration is used.
+
 ## Verification Notes
 - Unit-style SDK tests run locally.
 - Tenant-backed integration tests are skipped unless the required SharePoint environment variables are available.

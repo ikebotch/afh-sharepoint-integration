@@ -17,11 +17,7 @@ public static class ServiceCollectionExtensions
         if (services is null) throw new ArgumentNullException(nameof(services));
         if (configuration is null) throw new ArgumentNullException(nameof(configuration));
 
-        var graphConfig =
-            configuration.GetSection("AzureAD").Get<SharePointAuthOptions>()
-            ?? configuration.GetSection("SharePointGraph").Get<SharePointAuthOptions>()
-            ?? throw new InvalidOperationException(
-                "AzureAD or SharePointGraph configuration section is missing or invalid.");
+        var graphConfig = ResolveAuthOptions(configuration);
 
         services.Configure<SharePointListsOptions>(options =>
         {
@@ -85,5 +81,37 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IClientDocumentService, ClientDocumentService>();
 
         return services;
+    }
+
+    internal static SharePointAuthOptions ResolveAuthOptions(IConfiguration configuration)
+    {
+        var sectionName = configuration.GetSection("SharePointGraph").Exists()
+            ? "SharePointGraph"
+            : "AzureAD";
+        var options = configuration.GetSection(sectionName).Get<SharePointAuthOptions>();
+
+        if (options is null
+            || string.IsNullOrWhiteSpace(options.TenantId)
+            || string.IsNullOrWhiteSpace(options.ClientId)
+            || string.IsNullOrWhiteSpace(options.ClientSecret))
+        {
+            throw new InvalidOperationException(
+                $"{sectionName}:TenantId, {sectionName}:ClientId and {sectionName}:ClientSecret are required for SharePoint Graph authentication.");
+        }
+
+        if (!Uri.TryCreate(options.AuthorityHost, UriKind.Absolute, out _))
+        {
+            throw new InvalidOperationException(
+                $"{sectionName}:AuthorityHost must be an absolute URI.");
+        }
+
+        if (options.Scopes is not { Length: > 0 }
+            || options.Scopes.Any(string.IsNullOrWhiteSpace))
+        {
+            throw new InvalidOperationException(
+                $"{sectionName}:Scopes must contain at least one non-empty scope.");
+        }
+
+        return options;
     }
 }
